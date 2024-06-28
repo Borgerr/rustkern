@@ -1,0 +1,16 @@
+[package]
+name = "rustkern"
+version = "0.1.0"
+edition = "2021"
+authors = ["Ashton Hunt <ashkernel02@gmail.com>"]
+
+[dependencies]
+bootloader = "0.9.8"
+
+# eh_personality language item is no longer required with this panic behavior
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+
