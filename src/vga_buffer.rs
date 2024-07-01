@@ -4,6 +4,8 @@ use volatile::Volatile;
 #[allow(dead_code)] // allows for unused colors
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
+/// `Color` enum allows for more ergonomic color declarations.
+/// Maps directly to color codes
 pub enum Color {
     Black = 0,
     Blue = 1,
@@ -25,9 +27,11 @@ pub enum Color {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(transparent)] // exact same data layout as `u8`
+/// `ColorCode` struct combines `Color` instances for foreground and background.
 struct ColorCode(u8);
 
 impl ColorCode {
+    /// Instantiate a `ColorCode`
     fn new(foreground: Color, background: Color) -> ColorCode {
         ColorCode((background as u8) << 4 | (foreground as u8))
     }
@@ -35,6 +39,12 @@ impl ColorCode {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(C)] // field ordering copies C, as in ascii before code
+/// `ScreenChar` represents a character on the screen.
+///
+/// fields:
+///
+/// - `ascii_character` -- ascii representation of the legible character
+/// - `color_code` -- instance of `ColorCode`. Encodes foreground and background colors.
 struct ScreenChar {
     ascii_character: u8,
     color_code: ColorCode,
@@ -44,15 +54,18 @@ const BUFFER_HEIGHT: usize = 25;
 const BUFFER_WIDTH: usize = 80;
 
 #[repr(transparent)]
-struct Buffer {
+/// Pointer to VGA portion of memory.
+struct VGABuf {
     // BUFFER_HEIGHT * BUFFER_WIDTH transparent array of ScreenChar
     chars: [[Volatile<ScreenChar>; BUFFER_WIDTH]; BUFFER_HEIGHT],
 }
 
+/// `Writer` struct provides an interface to the VGA portion of memory.
+/// Kept global with `WRITER` instance.
 pub struct Writer {
     column_position: usize,
     color_code: ColorCode, // want same color code for all
-    buffer: &'static mut Buffer,
+    buffer: &'static mut VGABuf,
 }
 
 impl fmt::Write for Writer {
@@ -122,7 +135,7 @@ lazy_static! {      // not evaluated at compile time
     pub static ref WRITER: Mutex<Writer> = Mutex::new(Writer {
         column_position: 0,
         color_code: ColorCode::new(Color::Yellow, Color::Black),
-        buffer: unsafe { &mut *(0xb8000 as *mut Buffer) },
+        buffer: unsafe { &mut *(0xb8000 as *mut VGABuf) },
     });
 }
 

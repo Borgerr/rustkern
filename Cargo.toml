@@ -10,9 +10,6 @@ spin = "0.9.8"
 volatile = "0.2.6"
 
 # eh_personality language item is no longer required with this panic behavior
-[profile.dev]
-panic = "abort"
-
 [profile.release]
 panic = "abort"
 
