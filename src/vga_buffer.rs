@@ -129,8 +129,8 @@ impl Writer {
 }
 
 use lazy_static::lazy_static;
-use spin::Mutex;    // no concept of threads, spinlocks are used in place
-                    // otherwise we have no blocking in our kernel
+use spin::Mutex; // no concept of threads, spinlocks are used in place
+                 // otherwise we have no blocking in our kernel
 lazy_static! {      // not evaluated at compile time
     pub static ref WRITER: Mutex<Writer> = Mutex::new(Writer {
         column_position: 0,
@@ -160,3 +160,28 @@ pub fn _print(args: fmt::Arguments) {
     WRITER.lock().write_fmt(args).unwrap();
 }
 
+// --------------
+// relevant tests
+// --------------
+
+// ensure no panicks on print...
+#[test_case]
+fn test_println_simple() {
+    println!("test print");
+}
+#[test_case]
+fn test_println_many() {
+    for i in 0..500 {
+        println!("test print {}", i);
+    }
+}
+
+#[test_case]
+fn test_println_output() {
+    let s = "non nobis domine";
+    println!("{}", s);
+    for (i, c) in s.chars().enumerate() {
+        let screen_char = WRITER.lock().buffer.chars[BUFFER_HEIGHT - 2][i].read();
+        assert_eq!(char::from(screen_char.ascii_character), c);
+    }
+}
