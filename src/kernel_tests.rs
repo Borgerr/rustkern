@@ -1,4 +1,4 @@
-use crate::println;
+use crate::{exit_qemu, serial_print, serial_println, QemuExitCode};
 
 #[cfg(test)]
 /// Runs each kernel test.
@@ -7,23 +7,35 @@ use crate::println;
 /// since we don't link against the standard library,
 /// we need to do a bit of plumbing from
 /// test_main, to the test runner, which is this function.
-pub fn test_runner(tests: &[&dyn Fn()]) {
-    println!("Running {} tests", tests.len());
+pub fn test_runner(tests: &[&dyn Testable]) {
+    serial_println!("Running {} tests", tests.len());
     for test in tests {
-        test();
+        test.run();
+    }
+    exit_qemu(QemuExitCode::Success);
+}
+
+pub trait Testable {
+    fn run(&self) -> ();
+}
+
+impl<T> Testable for T
+where
+    T: Fn(),
+{
+    fn run(&self) {
+        serial_print!("{}...\t", core::any::type_name::<T>());
+        self();
+        serial_println!("test passed!");
     }
 }
 
 #[test_case]
 fn trivial_assertion() {
-    println!("bow chica wow wow");
     assert_eq!(1, 1);
-    println!("test passed!");
 }
 
 #[test_case]
-fn no_pass() {
-    println!("falls over and dies");
+fn trivial_panic() {
     assert_eq!(1, 2);
-    println!("NOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO");
 }
